@@ -308,6 +308,9 @@ export class ExpressDriver extends BaseDriver {
                 } else {
                     options.response.send();
                 }
+
+                options.response.body = null;
+
                 options.next();
 
             } else {
@@ -320,12 +323,19 @@ export class ExpressDriver extends BaseDriver {
             } else {
                 options.response.send(null);
             }
+
+            options.response.body = null;
+
             options.next();
         }
         else if (result instanceof Buffer) { // check if it's binary data (Buffer)
+            options.response.body = result;
+
             options.response.end(result, "binary");
         }
         else if (result instanceof Uint8Array) { // check if it's binary data (typed array)
+            options.response.body = Buffer.from(result as any);
+
             options.response.end(Buffer.from(result as any), "binary");
         }
         else if (result.pipe instanceof Function) {
@@ -337,6 +347,9 @@ export class ExpressDriver extends BaseDriver {
             } else {
                 options.response.send(result);
             }
+
+            options.response.body = result;
+
             options.next();
         }
     }
@@ -366,8 +379,10 @@ export class ExpressDriver extends BaseDriver {
             // send error content
             if (action && action.isJsonTyped) {
                 response.json(this.processJsonError(error));
+                response.body = this.processJsonError(error);
             } else {
                 response.send(this.processTextError(error)); // todo: no need to do it because express by default does it
+                response.body = this.processTextError(error);
             }
         }
         options.next(error);
